@@ -512,14 +512,14 @@ Jacobian::SolveSys (vec b)
 mat
 Jacobian::GetJqv (void)
 {
-  mat j1; // = *(m_lf->GetJ1 ()->GetData ()) * -1;
-  mat j2; //= *(m_lf->GetJ2 ()->GetData ()) * -1;
-  mat j3; //= *(m_lf->GetJ3 ()->GetData ()) * -1;
-  mat j4; // = *(m_lf->GetJ4 ()->GetData ()) * -1;
+  mat j1 = -(m_j1);
+  mat j2 = -(m_j2);
+  mat j3 = -(m_j3);
+  mat j4 = -(m_j4);
 
   mat jqv = j4 - (j3 * inv (j1) * j2);
 
-	return inv (m_matrix);
+	return jqv;
 }
 
 }
