@@ -376,11 +376,115 @@ Jacobian::CalcDQk (Ptr<Graph> graph)
 		}
 }
 
+void
+Jacobian::CalcJDQ(Ptr<Graph> graph)
+{
+	for (uint32_t i = 0; i < graph->GetNumBus (); i++)
+		{
+			Ptr<Bus> busK = graph->GetBus (i + 1);
+			std::vector<Ptr<Branch> > branches = busK->GetBranches ();
+			std::vector<Ptr<Bus> > neighbors = busK->GetNeighbors ();
+			uint32_t k = busK->GetBus ().m_nin - 1;
+
+			for (uint32_t j = 0; j < branches.size (); j++)
+				{
+					Ptr<Branch> branch = branches.at (j);
+					DBranch_t dataBranch = branch->GetBranch ();
+					Ptr<Bus> busM = neighbors.at (j);
+
+					DoubleValue vK, vM, aK, aM;
+					busK->GetAttribute ("VCalc", vK);
+					busM->GetAttribute ("VCalc", vM);
+					busK->GetAttribute ("ACalc", aK);
+					busM->GetAttribute ("ACalc", aM);
+
+					double theta_km = aK.Get () - aM.Get ();
+					double tap = dataBranch.m_tap;
+
+					uint32_t ordK = busK->GetBus ().m_ord;
+					/*
+					 * dQk em relaçao a 'ak'.
+					 * Jac(s.nb-1+s.bus.ordPQ(k), k-1) =
+					 * (1/s.branch.tap(km))*s.bus.v(k)*s.bus.v(m)*
+					 * (s.branch.b(km)*sin(akm)+s.branch.g(km)*cos(akm)) + Jac(s.nb-1+s.bus.ordPQ(k), k-1)
+					 */
+					if (busK->GetType () != Bus::SLACK)
+						{
+							m_j3 (k, ordK) = (1 / tap) * vK.Get () * vM.Get () *
+												( dataBranch.m_b * sin (theta_km) + dataBranch.m_g * cos (theta_km) ) +
+												m_j3 (k, ordK);
+						}
+					/*
+					 * dQk em relaçao a 'am' (exceto quando m for a barra slack).
+					 * Jac(s.nb-1+s.bus.ordPQ(k), m-1) =
+					 * -(1/s.branch.tap(km))*s.bus.v(k)*s.bus.v(m)*
+					 * (s.branch.g(km)*cos(akm)+s.branch.b(km)*sin(akm)) + Jac(s.nb-1+s.bus.ordPQ(k), m-1)
+					 */
+					if (busM->GetType () != Bus::SLACK)
+						{
+							uint32_t ordM = busM->GetBus ().m_ord;
+							m_j3 (k, ordM) = -(1 / tap) * vK.Get () * vM.Get () *
+																( dataBranch.m_g * cos (theta_km) + dataBranch.m_b * sin (theta_km) ) +
+																m_j3 (k, ordM);
+						}
+
+					/*
+					 * dQk em relaçao a 'vk'
+					 * I:
+					 * Jac(s.nb-1+s.bus.ordPQ(k), s.nb-1+s.bus.ordPQ(k)) =
+					 * 2*((1/s.branch.tap(km)^2)*s.branch.b(km)+s.branch.bsh(km))*s.bus.v(k) -
+					 * (1/s.branch.tap(km))*s.bus.v(m)*(s.branch.b(km)*cos(akm)-s.branch.g(km)*sin(akm)) +
+					 * Jac(s.nb-1+s.bus.ordPQ(k), s.nb-1+s.bus.ordPQ(k))
+					 *
+					 * II:
+					 * Jac(s.nb-1+s.bus.ordPQ(k), s.nb-1+s.bus.ordPQ(k)) =
+					 * 2*(s.branch.b(km)+s.branch.bsh(km))*s.bus.v(k) -
+					 * (1/s.branch.tap(km))*s.bus.v(m)*(s.branch.b(km)*cos(akm)-s.branch.g(km)*sin(akm)) +
+					 * Jac(s.nb-1+s.bus.ordPQ(k), s.nb-1+s.bus.ordPQ(k));
+					 */
+					if (dataBranch.m_tipo == 1 && busK->GetTap () == Bus::TAP)
+						{
+							m_j4 (k, k) = 2 * ( pow((1 / tap), 2) * dataBranch.m_b + dataBranch.m_bsh ) *
+															vK.Get () - (1 / tap) * vM.Get () *
+															(dataBranch.m_b * cos (theta_km) - dataBranch.m_g * sin(theta_km)) +
+															m_j4 (k, k);
+						}
+					else
+						{
+							m_j4 (k, k) = 2 * ( dataBranch.m_b + dataBranch.m_bsh ) *
+															vK.Get () - (1 / tap) * vM.Get () *
+															(dataBranch.m_b * cos (theta_km) - dataBranch.m_g * sin(theta_km)) +
+															m_j4 (k, k);
+						}
+
+					/* dQk em relacao a 'vm'.
+					 * Jac(s.nb-1+s.bus.ordPQ(k), s.nb-1+s.bus.ordPQ(m)) = -(1/s.branch.tap(km))*s.bus.v(k)*
+					 * (s.branch.b(km)*cos(akm)-s.branch.g(km)*sin(akm)) + Jac(s.nb-1+s.bus.ordPQ(k), s.nb-1+s.bus.ordPQ(m))
+					 */
+					uint32_t m = busM->GetBus ().m_nin - 1;
+					m_j4 (k, m) = -(1 / tap) * vK.Get () *
+														( dataBranch.m_b * cos (theta_km) - dataBranch.m_g * sin (theta_km) ) +
+														m_j4 (k, m);
+				}
+			/*
+			 * dQk em relaçao a 'vk' (continuação)
+			 * Jac(s.nb-1+s.bus.ordPQ(k), s.nb-1+s.bus.ordPQ(k)) =
+			 * 2*s.bus.bsh(k)*s.bus.v(k) + Jac(s.nb-1+s.bus.ordPQ(k), s.nb-1+s.bus.ordPQ(k))
+			 */
+			DoubleValue vK;
+			busK->GetAttribute("VCalc", vK);
+			m_j4 (k, k) = (2 * busK->GetBus ().m_bsh * vK.Get ()) + m_j4 (k, k);
+		}
+
+}
+
+
 mat
 Jacobian::CalcJac (Ptr<Graph> graph)
 {
 	CalcDPk (graph);
 	CalcDQk (graph);
+	CalcJDQ (graph);
 
 	return GetMatrix ();
 }
