@@ -157,6 +157,11 @@ Jacobian::CalcDPk (Ptr<Graph> graph)
 										m_matrix (k, k) = - (1 / tap) * vK.Get () * vM.Get () *
 																			( dataBranch.m_g * sin (theta_km) - dataBranch.m_b * cos (theta_km) ) +
 																			m_matrix (k, k);
+
+										// M_J1
+										m_j1 (k, k) = - (1 / tap) * vK.Get () * vM.Get () *
+																		( dataBranch.m_g * sin (theta_km) - dataBranch.m_b * cos (theta_km) ) +
+																		m_j1 (k, k);
 									}
 
 								/*
@@ -171,6 +176,11 @@ Jacobian::CalcDPk (Ptr<Graph> graph)
 										m_matrix (k, m) = (1 / tap) * vK.Get () * vM.Get () *
 																					( dataBranch.m_g * sin (theta_km) - dataBranch.m_b * cos (theta_km) ) +
 																					m_matrix (k, m);
+
+										// M_J1
+										m_j1 (k, m) = (1 / tap) * vK.Get () * vM.Get () *
+																		( dataBranch.m_g * sin (theta_km) - dataBranch.m_b * cos (theta_km) ) +
+																		m_j1 (k, m);
 									}
 
 
@@ -208,6 +218,24 @@ Jacobian::CalcDPk (Ptr<Graph> graph)
 											}
 									}
 
+								// M_J2
+								uint32_t m = busK->GetBus ().m_nin - 1;
+								if (dataBranch.m_tipo == 1 && busK->GetTap () == Bus::TAP)
+									{
+										m_j2 (k, m) = -2 * dataBranch.m_g * (1 / tap) * vK.Get () +
+																				(1 / tap) * vM.Get () *
+																				(dataBranch.m_g * cos (theta_km) + dataBranch.m_b * sin(theta_km)) +
+																				m_j2 (k, m);
+									}
+								else
+									{
+										m_j2 (k, m) = -2 * dataBranch.m_g * vK.Get () +
+																					(1 / tap) * vM.Get () *
+																					(dataBranch.m_g * cos (theta_km) + dataBranch.m_b * sin(theta_km)) +
+																					m_j2 (k, m);
+									}
+
+
 								/*
 								 * dPk em relação a 'vm'.
 								 * Jac(k-1, s.nb-1+s.bus.ordPQ(m)) =
@@ -222,6 +250,12 @@ Jacobian::CalcDPk (Ptr<Graph> graph)
 																				( dataBranch.m_g * cos (theta_km) + dataBranch.m_b * sin (theta_km) ) +
 																				m_matrix (k, index);
 									}
+
+								// M_J2
+								m = busM->GetBus ().m_nin - 1;
+								m_j2 (k, m) = (1 / tap) * vK.Get () *
+																	( dataBranch.m_g * cos (theta_km) + dataBranch.m_b * sin (theta_km) ) +
+																	m_j2 (k, m);
 						}
 				}
 		}

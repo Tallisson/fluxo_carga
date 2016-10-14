@@ -196,7 +196,6 @@ LoadFlow::Execute()
 	InitJ ();
 
 	vec b = m_mismatches->CalcMismatches(m_graph);
-	//std::cout << "Erros: \n" << b << std::endl;
 
 	uint32_t nextIter = 0;
 	while (nextIter == 0)
