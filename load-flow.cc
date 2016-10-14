@@ -166,8 +166,17 @@ LoadFlow::Prepare(std::string cdf)
 void
 LoadFlow::InitJ(void)
 {
-	/*uint32_t nPQ = m_graph->GetNumPQ();
-	uint32_t nPV = m_graph->GetNumPV();*/
+	uint32_t nPQ = m_graph->GetNumPQ ();
+	uint32_t nPV = m_graph->GetNumPV ();
+	uint32_t size = m_graph->GetNumPQ () * 2 + m_graph->GetNumPV();
+	uint32_t numB = m_graph->GetNumBus ();
+	m_jac->SetMatrix(size, size);
+
+	m_jac->SetJ1 ((nPQ + nPV), (nPQ + nPV));
+	m_jac->SetJ2 ((nPQ + nPV), numB);
+	m_jac->SetJ3 (numB, (nPQ + nPV));
+	m_jac->SetJ4 (numB, numB);
+
 }
 
 void
@@ -184,8 +193,7 @@ LoadFlow::Execute()
 			bus->Print();
 		}
 
-	uint32_t size = m_graph->GetNumPQ() * 2 + m_graph->GetNumPV();
-	m_jac->SetMatrix(size, size);
+	InitJ ();
 
 	vec b = m_mismatches->CalcMismatches(m_graph);
 	//std::cout << "Erros: \n" << b << std::endl;
