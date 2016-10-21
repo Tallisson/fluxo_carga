@@ -164,10 +164,10 @@ QControl::DoRestore (Ptr<Graph> graph)
 					DoubleValue vK, qgK;
 					busK->GetAttribute("VCalc", vK);
 					busK->GetAttribute("QCalc", qgK);
-					std::cout << vK.Get () << ", " << busK->GetBus ().m_v << std::endl;
 					if (qgK.Get () == busK->GetBus ().m_qgmin &&
 								vK.Get () <= busK->GetBus ().m_v)
 						{
+							std::cout << "Min = " << vK.Get () << ", " << busK->GetBus ().m_v << std::endl;
 							busK->SetAttribute("QCalc", DoubleValue (0));
 							busK->SetType (Bus::GENERATION);
 							update = true;
@@ -176,6 +176,7 @@ QControl::DoRestore (Ptr<Graph> graph)
 					if (qgK.Get () == busK->GetBus ().m_qgmax &&
 								vK.Get () >= busK->GetBus ().m_v)
 						{
+							std::cout << "Max = " << vK.Get () << ", " << busK->GetBus ().m_v << std::endl;
 							busK->SetAttribute("QCalc", DoubleValue (0));
 							busK->SetType (Bus::GENERATION);
 							update = true;

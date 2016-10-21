@@ -106,7 +106,7 @@ MaxQ::DoControl (Ptr<Graph> graph)
         {
       		control = true;
           volts.push_back (dsv);
-          index.push_back (i - 1);
+          index.push_back (bus->GetBus ().m_nin);
         }
     }
 
@@ -118,14 +118,15 @@ MaxQ::DoControl (Ptr<Graph> graph)
       vec deltaV = zeros<vec> (jqv.n_cols);
       for (uint32_t i = 0; i < volts.size (); i++)
         {
-          uint32_t ind = index.at (i);
-          deltaV(ind) = volts.at (i);
+          uint32_t ind = index.at (i) - 1;
+          deltaV (ind) = volts.at (i);
         }
 
       vec deltaQ = (jqv * deltaV);
 
-      NS_LOG_INFO ("Delta V: " << endl << deltaV);
-      NS_LOG_INFO ("Delta Q: " << endl << deltaQ);
+      //NS_LOG_INFO ("Delta V: " << endl << deltaV);
+      //NS_LOG_INFO ("Delta Q: " << endl << deltaQ);
+      std::cout << "Delta Q: \n" << max(deltaQ) << std::endl;
       double maxQ = 0;
       uint32_t maxElem = 0;
       for (uint32_t i = 1; i <= deltaQ.n_elem; i++)
@@ -137,21 +138,27 @@ MaxQ::DoControl (Ptr<Graph> graph)
               continue;
             }
 
+          if (crtBus->GetType () != Bus::GENERATION)
+          	{
+          		continue;
+          	}
+
           DoubleValue v;
           crtBus->GetAttribute ("VCalc", v);
-          if (v == Bus::MAX_VOLTAGE_ONS && maxVlt->GetStatus () == Bus::MIN_VOLTAGE_VIOLATION)
+
+          if (v.Get () == Bus::MAX_VOLTAGE_ONS && maxVlt->GetStatus () == Bus::MIN_VOLTAGE_VIOLATION)
             {
               continue;
             }
 
-          if (v == Bus::MIN_VOLTAGE_GR && maxVlt->GetStatus () == Bus::MAX_VOLTAGE_VIOLATION)
+          if (v.Get () == Bus::MIN_VOLTAGE_GR && maxVlt->GetStatus () == Bus::MAX_VOLTAGE_VIOLATION)
             {
               continue;
             }
 
           double value = deltaQ (i-1);
           crtBus->SetCrt (deltaQ (i-1));
-          std::cout << "Bus " << i << "=> value = " << value << "\n";
+          //std::cout << "Bus " << i << "=> value = " << value << "\n";
 
           if (value == 0)
             {
@@ -168,29 +175,25 @@ MaxQ::DoControl (Ptr<Graph> graph)
           return false;
         }
 
-      std::cout << "Max elemento: " << (maxElem-1) << ", max value = " << maxQ << std::endl;
+      //std::cout << "Max elemento: " << (maxElem-1) << ", max value = " << maxQ << std::endl;
       vec auxQ = zeros<vec> (deltaQ.n_elem);
       auxQ(maxElem -1) = maxQ;
       vec deltaVIjt = inv (jqv) * auxQ;
-      std::cout << "AuxQ: " << endl << auxQ << std::endl;
-      std::cout << "Delta V injected: " << std::endl << deltaVIjt << std::endl;
+      //std::cout << "AuxQ: " << endl << auxQ << std::endl;
+      //std::cout << "Delta V injected: " << std::endl << deltaVIjt << std::endl;
 
 			double m_alpha = 1;
 
 			double value = fabs (deltaVIjt (maxElem));
-			std::cout << "Variação de Tensão => " << deltaVIjt () << "\n";
-			if (value == 0)
-				{
-					continue;
-				}
+			//std::cout << "Variação de Tensão => " << deltaVIjt << "\n";
 			while (m_alpha * value < LIMIAR)
 				{
 					m_alpha++;
 				}
 
       Ptr<Bus> bus = graph->GetBus (maxElem);
-      std::cout << "Regulando Tensões " << std::endl;
-      double value = deltaVIjt (maxElem - 1);
+      //std::cout << "Regulando Tensões " << std::endl;
+      value = deltaVIjt (maxElem - 1);
       if (maxVlt->GetStatus () == Bus::MIN_VOLTAGE_VIOLATION && value < 0)
         {
           value = fabs (value);
@@ -204,8 +207,8 @@ MaxQ::DoControl (Ptr<Graph> graph)
       bus->GetAttribute("VCalc", v);
       double newValue = v.Get () + (value * m_alpha);
       std::cout << "Incremento na barra " << (maxElem) << " = " << (value * m_alpha) << std::endl;
-      std::cout << "Variação de potência reativa na barra " << (maxElem) << " => " << maxQ << std::endl;
-      std::cout << "ALPHA = " << m_alpha << std::endl;
+      //std::cout << "Variação de potência reativa na barra " << (maxElem) << " => " << maxQ << std::endl;
+      //std::cout << "ALPHA = " << m_alpha << std::endl;
 
       std::cout << "Voltage + value = " << (newValue) << std::endl;
 
@@ -227,6 +230,12 @@ bool
 MaxQ::DoRestore (Ptr<Graph> graph)
 {
 	return false;
+}
+
+void
+MaxQ::SetJac (Ptr<Jacobian> jac)
+{
+	m_jac = jac;
 }
 
 }

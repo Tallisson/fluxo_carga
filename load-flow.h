@@ -8,6 +8,7 @@
 #include "control.h"
 #include "q-control.h"
 #include "report.h"
+#include "max-q.h"
 
 #include "ns3/ptr.h"
 #include "ns3/object.h"

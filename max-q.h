@@ -3,6 +3,7 @@
 
 #include "control.h"
 #include "graph.h"
+#include "jacobian.h"
 
 #include "ns3/ptr.h"
 #include "ns3/object.h"
@@ -27,6 +28,8 @@ public:
 
 	virtual bool DoControl (Ptr<Graph> graph);
 	virtual bool DoRestore (Ptr<Graph> graph);
+
+	void SetJac (Ptr<Jacobian> jac);
 
   static const double LIMIAR = 0.01;
 

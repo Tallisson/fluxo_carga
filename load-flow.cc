@@ -275,7 +275,7 @@ LoadFlow::Execute()
 				for (uint32_t i = 0; i < m_graph->GetNumBus(); i++)
 					{
 						Ptr<Bus> bus = m_graph->GetBus(i + 1);
-						bus->Print();
+						//bus->Print();
 					}
 
 				// Teste de convergência:
