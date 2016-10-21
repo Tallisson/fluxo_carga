@@ -485,6 +485,7 @@ Jacobian::CalcJac (Ptr<Graph> graph)
 	CalcDPk (graph);
 	CalcDQk (graph);
 	CalcJDQ (graph);
+	CalcJqv ();
 
 	return GetMatrix ();
 }
