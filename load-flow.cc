@@ -247,7 +247,7 @@ LoadFlow::Execute()
 						crt = m_qControl->GetObject<QControl>()->DoRestore (m_graph);
 						if (crt == true)
 							{
-								Reset ();
+								InitJ ();
 							}
 					}
 
@@ -261,7 +261,7 @@ LoadFlow::Execute()
 						crt = m_qControl->GetObject<QControl>()->DoControl(m_graph);
 						if (crt == true)
 							{
-								Reset ();
+								InitJ ();
 							}
 					}
 
