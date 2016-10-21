@@ -9,6 +9,7 @@
 #include "q-control.h"
 #include "report.h"
 #include "max-q.h"
+#include "vsf.h"
 
 #include "ns3/ptr.h"
 #include "ns3/object.h"
@@ -27,6 +28,7 @@ private:
 	Ptr<Mismatch> m_mismatches;
 	Ptr<Jacobian> m_jac;
 	Ptr<Report> m_report;
+	Ptr<Control> m_vControl;
 
 	Sts_t m_sts;
 

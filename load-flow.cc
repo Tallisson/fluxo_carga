@@ -205,6 +205,7 @@ LoadFlow::Execute()
 
 	m_b = m_mismatches->CalcMismatches(m_graph);
 
+
 	uint32_t nextIter = 0;
 	while (nextIter == 0)
 		{
@@ -244,7 +245,7 @@ LoadFlow::Execute()
 				bool crt = false;
 				if (m_qControl != NULL)
 					{
-						crt = m_qControl->GetObject<QControl>()->DoRestore (m_graph);
+						crt = m_qControl->GetObject<QControl> ()->DoRestore (m_graph);
 						if (crt == true)
 							{
 								InitJ ();
@@ -258,7 +259,7 @@ LoadFlow::Execute()
 				std::cout << "Iter " << m_iter << std::endl;
 				if (m_qControl != NULL)
 					{
-						crt = m_qControl->GetObject<QControl>()->DoControl(m_graph);
+						crt = m_qControl->GetObject<QControl> ()->DoControl (m_graph);
 						if (crt == true)
 							{
 								InitJ ();
@@ -277,7 +278,6 @@ LoadFlow::Execute()
 						Ptr<Bus> bus = m_graph->GetBus(i + 1);
 						//bus->Print();
 					}
-
 				// Teste de convergência:
 
 				double maxB = max(abs(m_b));
@@ -299,7 +299,7 @@ LoadFlow::Execute()
 					}
 
 				CalcLosses();
-				m_report->StoreData(m_graph, m_sts.m_baseMVA);
+				m_report->StoreData (m_graph, m_sts.m_baseMVA);
 				m_report->StoreL (m_totalL);
 		}
 
