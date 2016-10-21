@@ -111,8 +111,10 @@ Report::Save(void)
 	/******************************************************/
 	std::ofstream fileV, fileQg;
 	std::ostringstream osV, osQg;
-	fileV.open (m_fileV.c_str (), std::ofstream::app);
-	fileQg.open (m_fileQg.c_str (), std::ofstream::app);
+	//fileV.open (m_fileV.c_str (), std::ofstream::app);
+	fileV.open (m_fileV.c_str ());
+	//fileQg.open (m_fileQg.c_str (), std::ofstream::app);
+	fileQg.open (m_fileQg.c_str ());
 
 	if (fileV.is_open ())
 		{
@@ -140,7 +142,8 @@ Report::Save(void)
 	/******************************************************/
 	std::ofstream fileState;
 	std::ostringstream osS;
-	fileState.open (m_fileState.c_str (), std::ofstream::app);
+	//fileState.open (m_fileState.c_str (), std::ofstream::app);
+	fileState.open (m_fileState.c_str ());
 
 	if (fileState.is_open ())
 		{
@@ -166,7 +169,8 @@ Report::Save(void)
 	/******************************************************/
 	std::ofstream fileL;
 	std::ostringstream osL;
-	fileL.open (m_fileLTotal.c_str (), std::ofstream::app);
+	//fileL.open (m_fileLTotal.c_str (), std::ofstream::app);
+	fileL.open (m_fileLTotal.c_str ());
 
 	if (fileL.is_open ())
 		{
