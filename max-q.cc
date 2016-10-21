@@ -60,35 +60,8 @@ MaxQ::GetTypeId(void)
 	return tid;
 }
 
-Ptr<Bus>
-MaxQ::MaxDsv (Ptr<Graph> graph)
-{
-  Ptr<Bus> max = NULL;
-  for (uint32_t i = 1; i <= graph->GetNumBus (); i++)
-    {
-      Ptr<Bus> bus = graph->GetBus (i);
-      if (bus->GetType () != Bus::LOAD)
-        {
-          continue;
-        }
-      if (max == NULL)
-        {
-          if (bus->GetDsv () != 0)
-            {
-              max = bus;
-            }
-        }
-      else if (fabs (bus->GetDsv ()) > fabs (max->GetDsv ()))
-        {
-          max = bus;
-        }
-    }
-
-  return max;
-}
-
 bool
-MaxQ::DoControl (Ptr<Graph> graph)
+MaxQ::DoControl (mat jqv, Ptr<Graph> graph)
 {
   bool control = false;
 
@@ -114,7 +87,6 @@ MaxQ::DoControl (Ptr<Graph> graph)
     {
   		Ptr<Bus> maxVlt = MaxDsv (graph);
 
-      mat jqv = m_jac->GetJqv ();
       vec deltaV = zeros<vec> (jqv.n_cols);
       for (uint32_t i = 0; i < volts.size (); i++)
         {
@@ -225,17 +197,4 @@ MaxQ::DoControl (Ptr<Graph> graph)
 
 	return control;
 }
-
-bool
-MaxQ::DoRestore (Ptr<Graph> graph)
-{
-	return false;
-}
-
-void
-MaxQ::SetJac (Ptr<Jacobian> jac)
-{
-	m_jac = jac;
-}
-
 }

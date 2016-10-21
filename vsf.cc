@@ -59,35 +59,8 @@ Vsf::GetTypeId(void)
 	return tid;
 }
 
-Ptr<Bus>
-Vsf::MaxDsv (Ptr<Graph> graph)
-{
-  Ptr<Bus> max = NULL;
-  for (uint32_t i = 1; i <= graph->GetNumBus (); i++)
-    {
-      Ptr<Bus> bus = graph->GetBus (i);
-      if (bus->GetType () != Bus::LOAD)
-        {
-          continue;
-        }
-      if (max == NULL)
-        {
-          if (bus->GetDsv () != 0)
-            {
-              max = bus;
-            }
-        }
-      else if (fabs (bus->GetDsv ()) > fabs (max->GetDsv ()))
-        {
-          max = bus;
-        }
-    }
-
-  return max;
-}
-
 bool
-Vsf::DoControl (Ptr<Graph> graph)
+Vsf::DoControl (mat jqv, Ptr<Graph> graph)
 {
 	bool control = false;
 
@@ -112,8 +85,6 @@ Vsf::DoControl (Ptr<Graph> graph)
 	if (volts.size () > 0)
 		{
 			Ptr<Bus> maxVlt = MaxDsv (graph);
-
-			mat jqv = m_jac->GetJqv ();
       mat invJqv = inv (jqv);
 
 			vec deltaV = zeros<vec> (jqv.n_cols);
@@ -225,18 +196,6 @@ Vsf::DoControl (Ptr<Graph> graph)
 		}
 
 	return control;
-}
-
-bool
-Vsf::DoRestore (Ptr<Graph> graph)
-{
-	return false;
-}
-
-void
-Vsf::SetJac (Ptr<Jacobian> jac)
-{
-	m_jac = jac;
 }
 
 }

@@ -1,7 +1,7 @@
 #ifndef MAX_Q_H_
 #define MAX_Q_H_
 
-#include "control.h"
+#include "v-control.h"
 #include "graph.h"
 #include "jacobian.h"
 
@@ -12,13 +12,8 @@
 namespace ns3
 {
 
-class MaxQ : public Control
+class MaxQ : public VControl
 {
-private:
-	void UpdateOrd(Ptr<Graph> graph);
-
-	Ptr<Bus> MaxDsv(Ptr<Graph> graph);
-
 public:
 	MaxQ();
 
@@ -26,14 +21,9 @@ public:
 
 	static TypeId GetTypeId(void);
 
-	virtual bool DoControl (Ptr<Graph> graph);
-	virtual bool DoRestore (Ptr<Graph> graph);
-
-	void SetJac (Ptr<Jacobian> jac);
+	virtual bool DoControl (mat jqv, Ptr<Graph> graph);
 
   static const double LIMIAR = 0.01;
-
-  Ptr<Jacobian> m_jac;
 };
 
 }

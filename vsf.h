@@ -1,7 +1,7 @@
 #ifndef VSF_H_
 #define VSF_H_
 
-#include "control.h"
+#include "v-control.h"
 #include "graph.h"
 #include "jacobian.h"
 
@@ -9,15 +9,13 @@
 #include "ns3/object.h"
 #include "ns3/type-id.h"
 
+#include <armadillo>
+
 namespace ns3
 {
 
-class Vsf : public Control
+class Vsf : public VControl
 {
-private:
-	void UpdateOrd(Ptr<Graph> graph);
-
-	Ptr<Jacobian> m_jac;
 public:
 	Vsf();
 
@@ -25,12 +23,7 @@ public:
 
 	static TypeId GetTypeId(void);
 
-	virtual bool DoControl (Ptr<Graph> graph);
-	virtual bool DoRestore (Ptr<Graph> graph);
-
-	Ptr<Bus> MaxDsv (Ptr<Graph> graph);
-
-	void SetJac (Ptr<Jacobian> jac);
+	virtual bool DoControl (mat jac, Ptr<Graph> graph);
 
 	static const double LIMIAR = 0.01;
 };
