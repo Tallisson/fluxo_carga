@@ -234,7 +234,7 @@ Vsf::DoRestore (Ptr<Graph> graph)
 }
 
 void
-Vsf::SetJqv(Ptr<Jacobian> jac)
+Vsf::SetJac (Ptr<Jacobian> jac)
 {
 	m_jac = jac;
 }

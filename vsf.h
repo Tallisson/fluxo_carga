@@ -30,7 +30,7 @@ public:
 
 	Ptr<Bus> MaxDsv (Ptr<Graph> graph);
 
-	void SetJqv(Ptr<Jacobian> jac);
+	void SetJac (Ptr<Jacobian> jac);
 
 	static const double LIMIAR = 0.01;
 };
