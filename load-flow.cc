@@ -180,6 +180,12 @@ LoadFlow::InitJ(void)
 }
 
 void
+LoadFlow::Reset(void)
+{
+
+}
+
+void
 LoadFlow::Execute()
 {
 	/*
@@ -195,13 +201,13 @@ LoadFlow::Execute()
 
 	InitJ ();
 
-	vec b = m_mismatches->CalcMismatches(m_graph);
+	m_b = m_mismatches->CalcMismatches(m_graph);
 
 	uint32_t nextIter = 0;
 	while (nextIter == 0)
 		{
-			mat m = m_jac->CalcJac(m_graph);
-			vec dx = m_jac->SolveSys(b);
+			mat m = m_jac->CalcJac (m_graph);
+			vec dx = m_jac->SolveSys (m_b);
 			//std::cout << "dx = " << std::endl << dx << std::endl;
 
 			//std::cout << "Dx: \n" << dx << std::endl;
@@ -240,7 +246,7 @@ LoadFlow::Execute()
 							{
 								uint32_t size = m_graph->GetNumPQ() * 2 + m_graph->GetNumPV();
 								m_jac->Zeros(size, size);
-								b = zeros<vec>(size);
+								m_b = zeros<vec>(size);
 							}
 					}
 
@@ -256,7 +262,7 @@ LoadFlow::Execute()
 							{
 								uint32_t size = m_graph->GetNumPQ() * 2 + m_graph->GetNumPV();
 								m_jac->Zeros(size, size);
-								b = zeros<vec>(size);
+								m_b = zeros<vec>(size);
 							}
 					}
 
@@ -264,7 +270,7 @@ LoadFlow::Execute()
 				 * Cálculo do vetor dos mismatches com os valores corrigidos de
 				 * 'a' e 'V':
 				 */
-				b = m_mismatches->CalcMismatches(m_graph);
+				m_b = m_mismatches->CalcMismatches(m_graph);
 				//std::cout << "Erros: \n" << b;
 				std::cout << "+++++++++++++++++++++++++++++++++++++++++\n";
 				for (uint32_t i = 0; i < m_graph->GetNumBus(); i++)
@@ -275,7 +281,7 @@ LoadFlow::Execute()
 
 				// Teste de convergência:
 
-				double maxB = max(abs(b));
+				double maxB = max(abs(m_b));
 
 				if (maxB <= m_precision)
 					{

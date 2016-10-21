@@ -35,6 +35,7 @@ private:
 	uint32_t m_maxIter;
 
 	vec m_losses;
+	vec m_b;
 
 	void InitX0(void);
 
@@ -67,6 +68,8 @@ public:
 	void SetDir(std::string dir);
 
 	void SetFile(std::string file);
+
+	void Reset (void);
 };
 
 }
