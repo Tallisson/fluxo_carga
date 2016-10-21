@@ -182,7 +182,9 @@ LoadFlow::InitJ(void)
 void
 LoadFlow::Reset(void)
 {
-
+	uint32_t size = m_graph->GetNumPQ() * 2 + m_graph->GetNumPV();
+	m_jac->Zeros(size, size);
+	m_b = zeros<vec>(size);
 }
 
 void
@@ -244,9 +246,7 @@ LoadFlow::Execute()
 						bool crt = m_qControl->GetObject<QControl>()->DoRestore (m_graph);
 						if (crt == true)
 							{
-								uint32_t size = m_graph->GetNumPQ() * 2 + m_graph->GetNumPV();
-								m_jac->Zeros(size, size);
-								m_b = zeros<vec>(size);
+								Reset ();
 							}
 					}
 
@@ -260,9 +260,7 @@ LoadFlow::Execute()
 						bool crt = m_qControl->GetObject<QControl>()->DoControl(m_graph);
 						if (crt == true)
 							{
-								uint32_t size = m_graph->GetNumPQ() * 2 + m_graph->GetNumPV();
-								m_jac->Zeros(size, size);
-								m_b = zeros<vec>(size);
+								Reset ();
 							}
 					}
 
