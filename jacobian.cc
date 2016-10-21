@@ -509,17 +509,21 @@ Jacobian::SolveSys (vec b)
 	return vec(inv (m_matrix) * -b);
 }
 
-mat
-Jacobian::GetJqv (void)
+void
+Jacobian::CalcJqv (void)
 {
   mat j1 = -(m_j1);
   mat j2 = -(m_j2);
   mat j3 = -(m_j3);
   mat j4 = -(m_j4);
 
-  mat jqv = j4 - (j3 * inv (j1) * j2);
+  m_jqv = j4 - (j3 * inv (j1) * j2);
+}
 
-	return jqv;
+mat
+Jacobian::GetJqv (void)
+{
+	return m_jqv;
 }
 
 }

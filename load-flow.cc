@@ -241,9 +241,10 @@ LoadFlow::Execute()
 							bus->SetAttribute("VCalc", DoubleValue(vD));
 						}
 				}
+				bool crt = false;
 				if (m_qControl != NULL)
 					{
-						bool crt = m_qControl->GetObject<QControl>()->DoRestore (m_graph);
+						crt = m_qControl->GetObject<QControl>()->DoRestore (m_graph);
 						if (crt == true)
 							{
 								Reset ();
@@ -257,7 +258,7 @@ LoadFlow::Execute()
 				std::cout << "Iter " << m_iter << std::endl;
 				if (m_qControl != NULL)
 					{
-						bool crt = m_qControl->GetObject<QControl>()->DoControl(m_graph);
+						crt = m_qControl->GetObject<QControl>()->DoControl(m_graph);
 						if (crt == true)
 							{
 								Reset ();

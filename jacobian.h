@@ -51,10 +51,12 @@ private:
 	mat m_j2;
 	mat m_j3;
 	mat m_j4;
+	mat m_jqv;
 
 	void CalcDPk(Ptr<Graph> graph);
 	void CalcDQk(Ptr<Graph> graph);
 	void CalcJDQ(Ptr<Graph> graph);
+	void CalcJqv (void);
 };
 
 }
