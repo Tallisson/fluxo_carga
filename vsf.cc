@@ -37,6 +37,9 @@ using namespace arma;
 namespace ns3
 {
 
+NS_LOG_COMPONENT_DEFINE ("Vsf");
+NS_OBJECT_ENSURE_REGISTERED (Vsf);
+
 Vsf::Vsf ()
 {
 }
@@ -57,7 +60,7 @@ Vsf::GetTypeId(void)
 }
 
 Ptr<Bus>
-Vsf::Vsf (Ptr<Graph> graph)
+Vsf::MaxDsv (Ptr<Graph> graph)
 {
   Ptr<Bus> max = NULL;
   for (uint32_t i = 1; i <= graph->GetNumBus (); i++)
@@ -102,7 +105,7 @@ Vsf::DoControl (Ptr<Graph> graph)
         {
       		control = true;
           volts.push_back (dsv);
-          index.push_back (i - 1);
+          index.push_back (bus->GetBus ().m_nin);
         }
     }
 
@@ -116,8 +119,8 @@ Vsf::DoControl (Ptr<Graph> graph)
 			vec deltaV = zeros<vec> (jqv.n_cols);
 			for (uint32_t i = 0; i < volts.size (); i++)
 				{
-					uint32_t ind = index.at (i);
-					deltaV(ind) = volts.at (i);
+					uint32_t ind = index.at (i) - 1;
+					deltaV (ind) = volts.at (i);
 				}
 
 			vec deltaQ = (jqv * deltaV);
@@ -135,14 +138,19 @@ Vsf::DoControl (Ptr<Graph> graph)
 							continue;
 						}
 
-					DoubleValue v;
-					crtBus->GetAttribute ("VCalc", v);
-					if (v == Bus::MAX_VOLTAGE_ONS && maxVlt->GetStatus () == Bus::MIN_VOLTAGE_VIOLATION)
+					if (crtBus->GetType () != Bus::GENERATION)
 						{
 							continue;
 						}
 
-					if (v == Bus::MIN_VOLTAGE_GR && maxVlt->GetStatus () == Bus::MAX_VOLTAGE_VIOLATION)
+					DoubleValue v;
+					crtBus->GetAttribute ("VCalc", v);
+					if (v.Get () == Bus::MAX_VOLTAGE_ONS && maxVlt->GetStatus () == Bus::MIN_VOLTAGE_VIOLATION)
+						{
+							continue;
+						}
+
+					if (v.Get () == Bus::MIN_VOLTAGE_GR && maxVlt->GetStatus () == Bus::MAX_VOLTAGE_VIOLATION)
 						{
 							continue;
 						}
@@ -178,11 +186,7 @@ Vsf::DoControl (Ptr<Graph> graph)
 			double m_alpha = 1;
 
 			double value = fabs (deltaVIjt (maxElem));
-			std::cout << "Variação de Tensão => " << deltaVIjt () << "\n";
-			if (value == 0)
-				{
-					continue;
-				}
+			std::cout << "Variação de Tensão => " << deltaVIjt << "\n";
 			while (m_alpha * value < LIMIAR)
 				{
 					m_alpha++;
@@ -190,7 +194,7 @@ Vsf::DoControl (Ptr<Graph> graph)
 
 			Ptr<Bus> bus = graph->GetBus (maxElem);
 			std::cout << "Regulando Tensões " << std::endl;
-			double value = deltaVIjt (maxElem - 1);
+			value = deltaVIjt (maxElem - 1);
 			if (maxVlt->GetStatus () == Bus::MIN_VOLTAGE_VIOLATION && value < 0)
 				{
 					value = fabs (value);
@@ -227,6 +231,12 @@ bool
 Vsf::DoRestore (Ptr<Graph> graph)
 {
 	return false;
+}
+
+void
+Vsf::SetJqv(Ptr<Jacobian> jac)
+{
+	m_jac = jac;
 }
 
 }
