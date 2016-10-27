@@ -205,102 +205,121 @@ LoadFlow::Execute()
 
 	m_b = m_mismatches->CalcMismatches(m_graph);
 
-
-	uint32_t nextIter = 0;
-	while (nextIter == 0)
+	bool execute = true;
+	uint32_t nextIter, nextCrt;
+	nextCrt = 0;
+	while (execute)
 		{
-			mat m = m_jac->CalcJac (m_graph);
-			vec dx = m_jac->SolveSys (m_b);
-			//std::cout << "dx = " << std::endl << dx << std::endl;
-
-			//std::cout << "Dx: \n" << dx << std::endl;
-			// Atualizar 'a' e 'V':
-
-			for (uint32_t i = 0; i < m_graph->GetNumBus(); i++)
+			nextIter = 0;
+			m_iter = 0;
+			while (nextIter == 0)
 				{
-					Ptr<Bus> bus = m_graph->GetBus(i + 1);
-					if (bus->GetType() != Bus::SLACK)
-						{
-							DoubleValue ang;
-							bus->GetAttribute("ACalc", ang);
-							double angD = ang.Get();
+					mat m = m_jac->CalcJac (m_graph);
+					vec dx = m_jac->SolveSys (m_b);
+					//std::cout << "dx = " << std::endl << dx << std::endl;
 
-							angD += dx(bus->GetBus().m_ord);
-							//std::cout << "Ângulo Anterior " << ang.Get () << ", Atualização = " << dx (bus->GetBus ().m_ord) << " Novo Ângulo = " << angD << std::endl;
-							bus->SetAttribute("ACalc", DoubleValue(angD));
+					//std::cout << "Dx: \n" << dx << std::endl;
+					// Atualizar 'a' e 'V':
+
+					for (uint32_t i = 0; i < m_graph->GetNumBus(); i++)
+						{
+							Ptr<Bus> bus = m_graph->GetBus(i + 1);
+							if (bus->GetType() != Bus::SLACK)
+								{
+									DoubleValue ang;
+									bus->GetAttribute("ACalc", ang);
+									double angD = ang.Get();
+
+									angD += dx(bus->GetBus().m_ord);
+									//std::cout << "Ângulo Anterior " << ang.Get () << ", Atualização = " << dx (bus->GetBus ().m_ord) << " Novo Ângulo = " << angD << std::endl;
+									bus->SetAttribute("ACalc", DoubleValue(angD));
+								}
+
+							if (bus->GetType() != Bus::SLACK && bus->GetType() != Bus::GENERATION)
+								{
+									DoubleValue v;
+									bus->GetAttribute("VCalc", v);
+									double vD = v.Get();
+
+									uint32_t ind = m_graph->GetNumBus() - 1 + bus->GetBus().m_ordPQ;
+									vD += dx(ind);
+									//std::cout << "Mag. Tensão Anterior " << v.Get () << ", Atualização = " << dx (ind) << ", Nova Mag. Tensão = " << vD << std::endl;
+									bus->SetAttribute("VCalc", DoubleValue(vD));
+								}
 						}
+						bool crt = false;
+						if (m_qControl != NULL)
+							{
+								crt = m_qControl->GetObject<QControl> ()->DoRestore (m_graph);
+								if (crt == true)
+									{
+										InitJ ();
+									}
+							}
 
-					if (bus->GetType() != Bus::SLACK && bus->GetType() != Bus::GENERATION)
+
+						m_iter++;
+
+						// Qlim
+						std::cout << "Iter " << m_iter << std::endl;
+						if (m_qControl != NULL)
+							{
+								crt = m_qControl->GetObject<QControl> ()->DoControl (m_graph);
+								if (crt == true)
+									{
+										InitJ ();
+									}
+							}
+
+						/*
+						 * Cálculo do vetor dos mismatches com os valores corrigidos de
+						 * 'a' e 'V':
+						 */
+						m_b = m_mismatches->CalcMismatches(m_graph);
+						//std::cout << "Erros: \n" << b;
+						std::cout << "+++++++++++++++++++++++++++++++++++++++++\n";
+						for (uint32_t i = 0; i < m_graph->GetNumBus(); i++)
+							{
+								Ptr<Bus> bus = m_graph->GetBus(i + 1);
+								//bus->Print();
+							}
+						// Teste de convergência:
+
+						double maxB = max(abs(m_b));
+
+						if (maxB <= m_precision)
+							{
+								nextIter = 1;
+							}
+						else
+							{
+								m_jac->Zeros();
+								nextIter = 0;
+
+								// Critério de saída do laço:
+								if (m_iter == m_maxIter)
+									{
+										nextIter = 2;
+									}
+							}
+
+							CalcLosses();
+							m_report->StoreData (m_graph, m_sts.m_baseMVA);
+							m_report->StoreL (m_totalL);
+				}
+
+			if(m_vControl != NULL)
+				{
+					execute = false;
+					if (nextCrt < 20)
 						{
-							DoubleValue v;
-							bus->GetAttribute("VCalc", v);
-							double vD = v.Get();
-
-							uint32_t ind = m_graph->GetNumBus() - 1 + bus->GetBus().m_ordPQ;
-							vD += dx(ind);
-							//std::cout << "Mag. Tensão Anterior " << v.Get () << ", Atualização = " << dx (ind) << ", Nova Mag. Tensão = " << vD << std::endl;
-							bus->SetAttribute("VCalc", DoubleValue(vD));
+							//execute = m_vControl->DoControl (m_jac->GetJqv (), m_graph);
 						}
 				}
-				bool crt = false;
-				if (m_qControl != NULL)
-					{
-						crt = m_qControl->GetObject<QControl> ()->DoRestore (m_graph);
-						if (crt == true)
-							{
-								InitJ ();
-							}
-					}
-
-
-				m_iter++;
-
-				// Qlim
-				std::cout << "Iter " << m_iter << std::endl;
-				if (m_qControl != NULL)
-					{
-						crt = m_qControl->GetObject<QControl> ()->DoControl (m_graph);
-						if (crt == true)
-							{
-								InitJ ();
-							}
-					}
-
-				/*
-				 * Cálculo do vetor dos mismatches com os valores corrigidos de
-				 * 'a' e 'V':
-				 */
-				m_b = m_mismatches->CalcMismatches(m_graph);
-				//std::cout << "Erros: \n" << b;
-				std::cout << "+++++++++++++++++++++++++++++++++++++++++\n";
-				for (uint32_t i = 0; i < m_graph->GetNumBus(); i++)
-					{
-						Ptr<Bus> bus = m_graph->GetBus(i + 1);
-						//bus->Print();
-					}
-				// Teste de convergência:
-
-				double maxB = max(abs(m_b));
-
-				if (maxB <= m_precision)
-					{
-						nextIter = 1;
-					}
-				else
-					{
-						m_jac->Zeros();
-						nextIter = 0;
-
-						// Critério de saída do laço:
-						if (m_iter == m_maxIter)
-							{
-								nextIter = 2;
-							}
-					}
-
-				CalcLosses();
-				m_report->StoreData (m_graph, m_sts.m_baseMVA);
-				m_report->StoreL (m_totalL);
+			if (execute == true)
+				{
+					nextCrt++;
+				}
 		}
 
 	if (nextIter == 1)
@@ -310,7 +329,8 @@ LoadFlow::Execute()
 		}
 	else
 		{
-			NS_LOG_INFO("O número máximo de iterações foi atingido e o método de Newton-Raphson não convergiu...");
+			std::cout << "O número máximo de iterações foi atingido e o método de Newton-Raphson não convergiu..."
+								<< std::endl;
 		}
 
 	for (uint32_t i = 0; i < m_graph->GetNumBus(); i++)
@@ -386,6 +406,12 @@ void
 LoadFlow::SetFile (std::string file)
 {
 	m_file = file;
+}
+
+void
+LoadFlow::SetVControl (Ptr<VControl> vControl)
+{
+	m_vControl = vControl;
 }
 
 }

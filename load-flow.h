@@ -28,7 +28,7 @@ private:
 	Ptr<Mismatch> m_mismatches;
 	Ptr<Jacobian> m_jac;
 	Ptr<Report> m_report;
-	Ptr<Control> m_vControl;
+	Ptr<VControl> m_vControl;
 
 	Sts_t m_sts;
 
@@ -61,6 +61,8 @@ public:
 
 	Ptr<Control> GetQControl(void) const;
 	void SetQControl(Ptr<Control> qControl);
+
+	void SetVControl (Ptr<VControl> vControl);
 
 	void Prepare(std::string cdf);
 
