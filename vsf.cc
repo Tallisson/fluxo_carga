@@ -63,36 +63,27 @@ bool
 Vsf::DoControl (mat jqv, Ptr<Graph> graph)
 {
 	bool control = false;
-
-  std::vector<double> volts;
-  std::vector<uint32_t> index;
+  vec deltaV = zeros<vec> (jqv.n_cols);
   for (uint32_t i = 1; i <= graph->GetNumBus (); i++)
     {
       Ptr<Bus> bus = graph->GetBus (i);
-      if (bus->GetType () != Bus::LOAD)
-        {
+      if (bus->GetType () != Bus::LOAD &&
+      						bus->GetType () != Bus::LOSS_CONTROL_REACT)
+      	{
           continue;
         }
       double dsv = bus->CalcDsv();
       if (dsv != 0)
         {
+      		deltaV (i - 1) = dsv;
       		control = true;
-          volts.push_back (dsv);
-          index.push_back (bus->GetBus ().m_nin);
         }
     }
 
-	if (volts.size () > 0)
+	if (control == true)
 		{
 			Ptr<Bus> maxVlt = MaxDsv (graph);
       mat invJqv = inv (jqv);
-
-			vec deltaV = zeros<vec> (jqv.n_cols);
-			for (uint32_t i = 0; i < volts.size (); i++)
-				{
-					uint32_t ind = index.at (i) - 1;
-					deltaV (ind) = volts.at (i);
-				}
 
 			vec deltaQ = (jqv * deltaV);
 
@@ -178,6 +169,15 @@ Vsf::DoControl (mat jqv, Ptr<Graph> graph)
 			DoubleValue v;
 			bus->GetAttribute("VCalc", v);
 			double newValue = v.Get () + (value * m_alpha);
+			if (newValue < Bus::MIN_VOLTAGE_GR)
+				{
+					newValue = Bus::MIN_VOLTAGE_GR;
+				}
+			if (newValue > Bus::MAX_VOLTAGE_ONS)
+				{
+					newValue = Bus::MAX_VOLTAGE_ONS;
+				}
+
 			std::cout << "Incremento na barra " << (maxElem) << " = " << (value * m_alpha) << std::endl;
 			std::cout << "Variação de potência reativa na barra " << (maxElem) << " => " << maxQ << std::endl;
 			std::cout << "ALPHA = " << m_alpha << std::endl;

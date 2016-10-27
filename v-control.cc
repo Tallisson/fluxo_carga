@@ -35,7 +35,8 @@ VControl::MaxDsv (Ptr<Graph> graph)
   for (uint32_t i = 1; i <= graph->GetNumBus (); i++)
     {
       Ptr<Bus> bus = graph->GetBus (i);
-      if (bus->GetType () != Bus::LOAD)
+      if (bus->GetType () != Bus::LOAD &&
+      			bus->GetType () != Bus::LOSS_CONTROL_REACT)
         {
           continue;
         }
