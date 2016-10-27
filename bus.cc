@@ -41,6 +41,7 @@ NS_OBJECT_ENSURE_REGISTERED (Bus);
 Bus::Bus() :
 	m_tap (Bus::IMP), m_crt (0.0)
 {
+	m_dsv = 0;
 }
 
 Bus::~Bus()
@@ -228,6 +229,7 @@ Bus::CalcDsv (void)
 {
 	DoubleValue v;
 	GetAttribute("VCalc", v);
+	m_dsv = 0;
 	if(v.Get () < Bus::MIN_VOLTAGE_ONS)
 		{
 			m_dsv = Bus::MIN_VOLTAGE_ONS - v.Get ();
