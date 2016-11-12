@@ -23,6 +23,8 @@ public:
 
 	virtual bool DoControl (mat jqv, Ptr<Graph> graph);
 
+	//uint32_t MaxV (Ptr<Graph> graph, vec q, Ptr<Bus> modBus);
+
   static const double LIMIAR = 0.01;
 };
 

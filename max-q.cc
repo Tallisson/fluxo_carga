@@ -60,6 +60,44 @@ MaxQ::GetTypeId(void)
 	return tid;
 }
 
+/*uint32_t
+MaxQ::MaxV (Ptr<Graph> graph, vec vt, Ptr<Bus> modBus)
+{
+	double maxQ = vt (0);
+	uint32_t maxBus = 1;
+	for (uint32_t i = 0; i < vt.n_elem; ++i)
+		{
+			Ptr<Bus> crtBus = graph->GetBus (i+1);
+			if (crtBus->GetType () == Bus::LOAD ||
+		          		crtBus->GetType () == Bus::LOSS_CONTROL_REACT)
+		  	{
+					continue;
+		  	}
+
+			  crtBus->SetCrt (vt (i));
+				DoubleValue v;
+			  crtBus->GetAttribute ("VCalc", v);
+
+				if (v.Get () == Bus::MAX_VOLTAGE_ONS && modBus->GetStatus () == Bus::MIN_VOLTAGE_VIOLATION)
+					{
+						continue;
+					}
+
+				if (v.Get () == Bus::MIN_VOLTAGE_GR && modBus->GetStatus () == Bus::MAX_VOLTAGE_VIOLATION)
+					{
+						continue;
+					}
+
+				if (vt (i) > maxQ)
+					{
+						maxQ = vt (i);
+						maxBus = i + 1;
+					}
+		}
+
+	return maxBus;
+}*/
+
 bool
 MaxQ::DoControl (mat jqv, Ptr<Graph> graph)
 {
@@ -80,80 +118,28 @@ MaxQ::DoControl (mat jqv, Ptr<Graph> graph)
 					control = true;
 				}
 		}
-  if (control == true)
+
+ if (control == true)
     {
-  		Ptr<Bus> maxVlt = MaxDsv (graph);
-  		std::cout << maxVlt << std::endl;
-      vec deltaQ = (jqv * deltaV);
+		 	Ptr<Bus> maxVlt = MaxDsv (graph);
+			vec deltaQ = (jqv * deltaV);
+			uint32_t idBus = MaxV (graph, deltaQ, maxVlt);
 
-      //NS_LOG_INFO ("Delta V: " << endl << deltaV);
-      //NS_LOG_INFO ("Delta Q: " << endl << deltaQ);
-      double maxQ = 0;
-      uint32_t maxElem = 0;
-      for (uint32_t i = 1; i <= deltaQ.n_elem; i++)
-        {
-          Ptr<Bus> crtBus = graph->GetBus (i);
-
-          if (crtBus->GetType () == Bus::LOAD)
-            {
-              continue;
-            }
-
-          if (crtBus->GetType () != Bus::GENERATION)
-          	{
-          		continue;
-          	}
-
-          DoubleValue v;
-          crtBus->GetAttribute ("VCalc", v);
-          if (v.Get () == Bus::MAX_VOLTAGE_ONS && maxVlt->GetStatus () == Bus::MIN_VOLTAGE_VIOLATION)
-            {
-              continue;
-            }
-
-          if (v.Get () == Bus::MIN_VOLTAGE_GR && maxVlt->GetStatus () == Bus::MAX_VOLTAGE_VIOLATION)
-            {
-              continue;
-            }
-
-          double value = deltaQ (i-1);
-          crtBus->SetCrt (deltaQ (i-1));
-          //std::cout << "Bus " << i << "=> value = " << value << "\n";
-
-          if (value == 0)
-            {
-              continue;
-            }
-          if ( maxElem == 0 || maxQ < value )
-            {
-              maxQ = value;
-              maxElem = i;
-            }
-        }
-      if (maxElem == 0)
-        {
-          return false;
-        }
-
-      //std::cout << "Max elemento: " << (maxElem-1) << ", max value = " << maxQ << std::endl;
+      std::cout << "Max Q = " << deltaQ (idBus - 1) << std::endl;
       vec auxQ = zeros<vec> (deltaQ.n_elem);
-      auxQ(maxElem -1) = maxQ;
+      auxQ (idBus - 1) = deltaQ (idBus - 1);
       vec deltaVIjt = inv (jqv) * auxQ;
-      //std::cout << "AuxQ: " << endl << auxQ << std::endl;
-      //std::cout << "Delta V injected: " << std::endl << deltaVIjt << std::endl;
 
 			double m_alpha = 1;
-
-			double value = fabs (deltaVIjt (maxElem));
-			//std::cout << "Variação de Tensão => " << deltaVIjt << "\n";
+			double value = fabs (deltaVIjt (idBus - 1));
 			while (m_alpha * value < LIMIAR)
 				{
 					m_alpha++;
 				}
+			std::cout << "Variação de Tensão => " << value << ", alpha = " << m_alpha << "\n";
 
-      Ptr<Bus> bus = graph->GetBus (maxElem);
-      //std::cout << "Regulando Tensões " << std::endl;
-      value = deltaVIjt (maxElem - 1);
+      Ptr<Bus> bus = graph->GetBus (idBus);
+      value = deltaVIjt (idBus - 1);
       if (maxVlt->GetStatus () == Bus::MIN_VOLTAGE_VIOLATION && value < 0)
         {
           value = fabs (value);
@@ -174,14 +160,11 @@ MaxQ::DoControl (mat jqv, Ptr<Graph> graph)
       	{
       		newValue = Bus::MAX_VOLTAGE_ONS;
       	}
-      std::cout << "Votage = " << v.Get () << ", Incremento na barra " << (maxElem) << " = " << (value * m_alpha) << std::endl;
-      //std::cout << "Variação de potência reativa na barra " << (maxElem) << " => " << maxQ << std::endl;
-      //std::cout << "ALPHA = " << m_alpha << std::endl;
 
       std::cout << "Voltage + value = " << (newValue) << std::endl;
       bus->SetAttribute ("VCalc", DoubleValue (newValue));
     }
-
 	return control;
 }
+
 }

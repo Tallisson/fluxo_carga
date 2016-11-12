@@ -19,7 +19,11 @@ public:
 
 	Ptr<Bus> MaxDsv (Ptr<Graph> graph);
 
+	uint32_t MaxV (Ptr<Graph> graph, arma::vec vt, Ptr<Bus> modBus);
+
 	virtual bool DoControl (arma::mat jqv, Ptr<Graph> graph) = 0;
+
+
 };
 
 }

@@ -205,10 +205,10 @@ LoadFlow::Execute()
 
 	m_b = m_mismatches->CalcMismatches(m_graph);
 
-	bool execute = true;
+	bool execute = false;
 	uint32_t nextIter, nextCrt;
 	nextCrt = 0;
-	while (execute)
+	do//while (execute)
 		{
 			nextIter = 0;
 			m_iter = 0;
@@ -313,14 +313,14 @@ LoadFlow::Execute()
 					execute = false;
 					if (nextCrt < 20)
 						{
-							//execute = m_vControl->DoControl (m_jac->GetJqv (), m_graph);
+							execute = m_vControl->DoControl (m_jac->GetJqv (), m_graph);
 						}
 				}
 			if (execute == true)
 				{
 					nextCrt++;
 				}
-		}
+		} while (execute);
 
 	if (nextIter == 1)
 		{
@@ -336,7 +336,12 @@ LoadFlow::Execute()
 	for (uint32_t i = 0; i < m_graph->GetNumBus(); i++)
 		{
 			Ptr<Bus> bus = m_graph->GetBus(i + 1);
-			bus->Print();
+			DoubleValue v;
+			bus->GetAttribute("VCalc", v);
+			if ((bus->GetType () == Bus::LOAD || bus->GetType () == 4) && (v.Get () < 0.95 || v.Get () > 1.05))
+				{
+					bus->Print();
+				}
 		}
 
 	std::string filename = m_dir + "/" + m_file;

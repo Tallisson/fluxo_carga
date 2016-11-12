@@ -63,100 +63,53 @@ bool
 Vsf::DoControl (mat jqv, Ptr<Graph> graph)
 {
 	bool control = false;
-  vec deltaV = zeros<vec> (jqv.n_cols);
-  for (uint32_t i = 1; i <= graph->GetNumBus (); i++)
-    {
-      Ptr<Bus> bus = graph->GetBus (i);
-      if (bus->GetType () != Bus::LOAD &&
-      						bus->GetType () != Bus::LOSS_CONTROL_REACT)
-      	{
-          continue;
-        }
-      double dsv = bus->CalcDsv();
-      if (dsv != 0)
-        {
-      		deltaV (i - 1) = dsv;
-      		control = true;
-        }
-    }
+	vec deltaV = zeros<vec> (jqv.n_cols);
+	for (uint32_t i = 1; i <= graph->GetNumBus (); i++)
+		{
+			Ptr<Bus> bus = graph->GetBus (i);
+			if (bus->GetType () != Bus::LOAD &&
+						bus->GetType () != Bus::LOSS_CONTROL_REACT)
+				{
+					continue;
+				}
+			double dsv = bus->CalcDsv();
+			if (dsv != 0)
+				{
+					deltaV (i - 1) = dsv;
+					control = true;
+				}
+		}
 
 	if (control == true)
 		{
 			Ptr<Bus> maxVlt = MaxDsv (graph);
-      mat invJqv = inv (jqv);
+			mat invJqv = inv (jqv);
 
-			vec deltaQ = (jqv * deltaV);
-
-			NS_LOG_INFO ("Delta V: " << endl << deltaV);
-			NS_LOG_INFO ("Delta Q: " << endl << deltaQ);
-			double maxQ = 0;
-			uint32_t maxElem = 0;
-			for (uint32_t i = 1; i <= deltaQ.n_elem; i++)
+			subview_col<double> s = invJqv.col(maxVlt->GetBus ().m_nin - 1);
+			vec vsf = zeros<vec> (s.n_elem);
+			for(uint32_t i = 0; i < s.n_elem; i++)
 				{
-					Ptr<Bus> crtBus = graph->GetBus (i);
-
-					if (crtBus->GetType () == Bus::LOAD)
-						{
-							continue;
-						}
-
-					if (crtBus->GetType () != Bus::GENERATION)
-						{
-							continue;
-						}
-
-					DoubleValue v;
-					crtBus->GetAttribute ("VCalc", v);
-					if (v.Get () == Bus::MAX_VOLTAGE_ONS && maxVlt->GetStatus () == Bus::MIN_VOLTAGE_VIOLATION)
-						{
-							continue;
-						}
-
-					if (v.Get () == Bus::MIN_VOLTAGE_GR && maxVlt->GetStatus () == Bus::MAX_VOLTAGE_VIOLATION)
-						{
-							continue;
-						}
-
-          uint32_t idX = i - 1;
-          uint32_t idY = maxVlt->GetBus ().m_nin - 1;
-
-          double value = invJqv (idX, idY);
-          crtBus->SetCrt (value);
-					std::cout << "Bus " << i << "=> value = " << value << "\n";
-					if (value == 0)
-						{
-							continue;
-						}
-					if ( maxElem == 0 || maxQ < value )
-						{
-							maxQ = value;
-							maxElem = i;
-						}
-				}
-			if (maxElem == 0)
-				{
-					return false;
+					vsf (i) = s (i);
 				}
 
-			std::cout << "Max elemento: " << (maxElem-1) << ", max value = " << maxQ << std::endl;
-			vec auxQ = zeros<vec> (deltaQ.n_elem);
-			auxQ(maxElem -1) = maxQ;
-			vec deltaVIjt = inv (jqv) * auxQ;
-			std::cout << "AuxQ: " << endl << auxQ << std::endl;
-			std::cout << "Delta V injected: " << std::endl << deltaVIjt << std::endl;
+			uint32_t idBus = MaxV (graph, vsf, maxVlt);
+			DoubleValue t;
+			maxVlt->GetAttribute ("VCalc", t);
+			std::cout << "Max Vlt = " << maxVlt->GetBus ().m_nin << " = " << t.Get () << ", Max = " << vsf (idBus - 1) << std::endl;
+			vec aux = zeros<vec> (vsf.n_elem);
+			aux (idBus - 1) = vsf (idBus - 1);
+			vec deltaVIjt = inv (jqv) * aux;
 
 			double m_alpha = 1;
-
-			double value = fabs (deltaVIjt (maxElem));
-			std::cout << "Variação de Tensão => " << deltaVIjt << "\n";
+			double value = fabs (deltaVIjt (idBus - 1));
 			while (m_alpha * value < LIMIAR)
 				{
 					m_alpha++;
 				}
+			std::cout << "Variação de Tensão => " << value << ", alpha = " << m_alpha << "\n";
 
-			Ptr<Bus> bus = graph->GetBus (maxElem);
-			std::cout << "Regulando Tensões " << std::endl;
-			value = deltaVIjt (maxElem - 1);
+			Ptr<Bus> bus = graph->GetBus (idBus);
+			value = deltaVIjt (idBus - 1);
 			if (maxVlt->GetStatus () == Bus::MIN_VOLTAGE_VIOLATION && value < 0)
 				{
 					value = fabs (value);
@@ -178,20 +131,7 @@ Vsf::DoControl (mat jqv, Ptr<Graph> graph)
 					newValue = Bus::MAX_VOLTAGE_ONS;
 				}
 
-			std::cout << "Incremento na barra " << (maxElem) << " = " << (value * m_alpha) << std::endl;
-			std::cout << "Variação de potência reativa na barra " << (maxElem) << " => " << maxQ << std::endl;
-			std::cout << "ALPHA = " << m_alpha << std::endl;
-
-			std::cout << "Voltage + value = " << (newValue) << std::endl;
-
-			if ( newValue > Bus::MAX_VOLTAGE_ONS )
-				{
-					newValue = Bus::MAX_VOLTAGE_ONS;
-				}
-			if ( newValue < Bus::MIN_VOLTAGE_ONS )
-				{
-					newValue = Bus::MIN_VOLTAGE_ONS;
-				}
+			std::cout << "Value = " << v.Get () << " Bus = " << bus->GetType () << ", Voltage + value = " << (newValue) << std::endl;
 			bus->SetAttribute ("VCalc", DoubleValue (newValue));
 		}
 

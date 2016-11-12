@@ -209,7 +209,7 @@ Bus::GetTap(void) const
 void
 Bus::Print(void)
 {
-	std::cout << IOUtils::Format(m_vCalc) << IOUtils::Format(m_aCalc) << std::endl;
+	std::cout << m_bus.m_nin << "\t" << IOUtils::Format(m_vCalc) << IOUtils::Format(m_aCalc) << std::endl;
 }
 
 void

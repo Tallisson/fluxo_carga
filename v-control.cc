@@ -31,7 +31,8 @@ namespace ns3
 Ptr<Bus>
 VControl::MaxDsv (Ptr<Graph> graph)
 {
-  Ptr<Bus> max = NULL;
+  Ptr<Bus> maxBus = graph->GetBus (1);
+  double maxDsv = maxBus->GetDsv ();
   for (uint32_t i = 1; i <= graph->GetNumBus (); i++)
     {
       Ptr<Bus> bus = graph->GetBus (i);
@@ -40,21 +41,56 @@ VControl::MaxDsv (Ptr<Graph> graph)
         {
           continue;
         }
-      if (max == NULL)
-        {
-          if (bus->GetDsv () != 0)
-            {
-              max = bus;
-            }
-        }
-      else if (fabs (bus->GetDsv ()) > fabs (max->GetDsv ()))
-        {
-          max = bus;
-        }
+
+			if (bus->GetDsv () > maxDsv)
+				{
+					maxBus = bus;
+					maxDsv = bus->GetDsv ();
+				}
+
     }
 
-  return max;
+  return maxBus;
 }
+
+uint32_t
+VControl::MaxV (Ptr<Graph> graph, arma::vec vt, Ptr<Bus> modBus)
+{
+	double maxQ = vt (0);
+	uint32_t maxBus = 1;
+	for (uint32_t i = 0; i < vt.n_elem; ++i)
+		{
+			Ptr<Bus> crtBus = graph->GetBus (i+1);
+			if (crtBus->GetType () == Bus::LOAD ||
+		          		crtBus->GetType () == Bus::LOSS_CONTROL_REACT)
+		  	{
+					continue;
+		  	}
+
+			  crtBus->SetCrt (vt (i));
+				DoubleValue v;
+			  crtBus->GetAttribute ("VCalc", v);
+
+				if (v.Get () == Bus::MAX_VOLTAGE_ONS && modBus->GetStatus () == Bus::MIN_VOLTAGE_VIOLATION)
+					{
+						continue;
+					}
+
+				if (v.Get () == Bus::MIN_VOLTAGE_GR && modBus->GetStatus () == Bus::MAX_VOLTAGE_VIOLATION)
+					{
+						continue;
+					}
+
+				if (vt (i) > maxQ)
+					{
+						maxQ = vt (i);
+						maxBus = i + 1;
+					}
+		}
+
+	return maxBus;
+}
+
 
 TypeId
 VControl::GetTypeId(void)
