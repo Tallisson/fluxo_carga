@@ -95,7 +95,7 @@ Vsf::DoControl (mat jqv, Ptr<Graph> graph)
 			uint32_t idBus = MaxV (graph, vsf, maxVlt);
 			DoubleValue t;
 			maxVlt->GetAttribute ("VCalc", t);
-			std::cout << "Max Vlt = " << maxVlt->GetBus ().m_nin << " = " << t.Get () << ", Max = " << vsf (idBus - 1) << std::endl;
+			std::cout << "Max Vlt = " << maxVlt->GetBus ().m_nin << " = " << t.Get () << ", Max = " << vsf (idBus - 1) << ", IdBus = " << idBus << std::endl;
 			vec aux = zeros<vec> (vsf.n_elem);
 			aux (idBus - 1) = vsf (idBus - 1);
 			vec deltaVIjt = inv (jqv) * aux;

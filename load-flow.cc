@@ -302,10 +302,12 @@ LoadFlow::Execute()
 										nextIter = 2;
 									}
 							}
-
-							CalcLosses();
-							m_report->StoreData (m_graph, m_sts.m_baseMVA);
-							m_report->StoreL (m_totalL);
+							if(nextIter != 0)
+								{
+									CalcLosses();
+									m_report->StoreData (m_graph, m_sts.m_baseMVA);
+									m_report->StoreL (m_totalL);
+								}
 				}
 
 			if(m_vControl != NULL)
@@ -346,7 +348,7 @@ LoadFlow::Execute()
 
 	std::string filename = m_dir + "/" + m_file;
 	IOUtils::WriteFile (filename, 0, m_graph, m_sts.m_baseMVA);
-	m_report->Save ();
+	m_report->Save (m_graph);
 }
 
 void

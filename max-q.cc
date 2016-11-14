@@ -161,7 +161,7 @@ MaxQ::DoControl (mat jqv, Ptr<Graph> graph)
       		newValue = Bus::MAX_VOLTAGE_ONS;
       	}
 
-      std::cout << "Voltage + value = " << (newValue) << std::endl;
+      std::cout << "Bus => " << bus->GetBus ().m_nin << ", Voltage + value = " << (newValue) << std::endl;
       bus->SetAttribute ("VCalc", DoubleValue (newValue));
     }
 	return control;

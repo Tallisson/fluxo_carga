@@ -34,7 +34,7 @@ public:
 
 	void StoreL(double l);
 
-	void Save(void);
+	void Save(Ptr<Graph> graph);
 
 	void SetFileLTotal(std::string fileLTotal);
 
@@ -57,6 +57,8 @@ private:
 	std::string m_fileLTotal;
 
 	std::string m_fileCrt;
+
+	std::string m_fileVL;
 
 	std::map<uint32_t, std::vector<TBus_t> > m_states;
 

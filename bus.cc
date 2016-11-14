@@ -42,6 +42,7 @@ Bus::Bus() :
 	m_tap (Bus::IMP), m_crt (0.0)
 {
 	m_dsv = 0;
+	m_isControlled = false;
 }
 
 Bus::~Bus()
@@ -234,12 +235,14 @@ Bus::CalcDsv (void)
 		{
 			m_dsv = Bus::MIN_VOLTAGE_ONS - v.Get ();
 			m_status = MIN_VOLTAGE_VIOLATION;
+			m_isControlled = true;
 		}
 
 	if (v.Get () > Bus::MAX_VOLTAGE_ONS)
 		{
 			m_dsv = v.Get () - Bus::MAX_VOLTAGE_ONS;
 			m_status = MAX_VOLTAGE_VIOLATION;
+			m_isControlled = true;
 		}
 
 	return m_dsv;
@@ -257,4 +260,9 @@ Bus::GetStatus (void)
 	return m_status;
 }
 
+bool
+Bus::IsControlled(void)
+{
+	return m_isControlled;
+}
 }

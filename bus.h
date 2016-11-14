@@ -39,6 +39,7 @@ public:
   double m_vmin;
   double m_gsh;
   double m_bsh;
+  double m_crt;
   uint32_t m_ctrl_rem;
   uint32_t m_ordPV;
   uint32_t m_posPV;
@@ -71,7 +72,7 @@ public:
 		MAX_VOLTAGE_VIOLATION = 2
 	};
 
-  static const double MIN_VOLTAGE_GR = 1.00;
+  static const double MIN_VOLTAGE_GR = 0.95;
   static const double MIN_VOLTAGE_IEEE = 1.10;
   static const double MIN_VOLTAGE_ONS = 0.95;
   static const double MAX_VOLTAGE_ONS = 1.05;
@@ -110,6 +111,8 @@ public:
   double GetDsv(void);
 
   Bus::Violation GetStatus (void);
+
+  bool IsControlled (void);
 private:
 	double m_aCalc;
 	double m_vCalc;
@@ -128,6 +131,8 @@ private:
 	double m_crt;
 
 	Violation m_status;
+
+	bool m_isControlled;
 };
 }
 #endif /* BUS_H_ */

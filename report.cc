@@ -74,22 +74,22 @@ Report::StoreData(Ptr<Graph> graph, double base)
 			dataBus.m_qc = dataBus.m_qc * base;
 			dataBus.m_pg = pg.Get () * base;
 			dataBus.m_qg = qg.Get () * base;
-
+			dataBus.m_crt = bus->GetCrt ();
 
 			std::map<uint32_t, std::vector<TBus_t> >::iterator it =
 						m_states.find (dataBus.m_nin);
 			std::vector<TBus_t> vector;
 			if(it != m_states.end ())
 				{
+					vector = it->second;
 					TBus_t bt;
 					bt.m_data = dataBus;
 					bt.m_crt = bus->GetCrt ();
 					vector.push_back (bt);
-					m_states.insert (std::pair<uint32_t, std::vector<TBus_t> > (dataBus.m_nin, vector));
+					it->second = vector;
 				}
 			else
 				{
-					std::vector<TBus_t> vector = it->second;
 					TBus_t bt;
 					bt.m_data = dataBus;
 					bt.m_crt = bus->GetCrt ();
@@ -106,18 +106,19 @@ Report::StoreL(double l)
 }
 
 void
-Report::Save(void)
+Report::Save (Ptr<Graph> graph)
 {
 	/******************************************************/
-	std::ofstream fileV, fileQg;
-	std::ostringstream osV, osQg;
-	//fileV.open (m_fileV.c_str (), std::ofstream::app);
+	std::ofstream fileV, fileVL, fileQg, fileCrt;
+	std::ostringstream osV, osQg, osVL, osCrt;
 	fileV.open (m_fileV.c_str ());
-	//fileQg.open (m_fileQg.c_str (), std::ofstream::app);
 	fileQg.open (m_fileQg.c_str ());
+	fileVL.open (m_fileVL.c_str ());
+	fileCrt.open(m_fileCrt.c_str ());
 
 	if (fileV.is_open ())
 		{
+			std::cout << "Size = " << m_states.size () << std::endl;
 			for(uint32_t i = 1; i <= m_states.size (); i++)
 				{
 					std::vector<TBus_t> vector = m_states.find(i)->second;
@@ -133,11 +134,33 @@ Report::Save(void)
 							osV << "\n";
 							osQg << "\n";
 						}
+					if (graph->GetBus (i)->IsControlled ())
+						{
+							osVL << i << "=>\t";
+							for (uint32_t j = 0; j < vector.size (); j++)
+								{
+									osVL << IOUtils::Format (vector.at (j).m_data.m_v) << " ";
+								}
+							osVL << "\n";
+						}
+					if(graph->GetBus (i)->GetType () == Bus::GENERATION)
+						{
+							osCrt << i << "=>\t";
+							for (uint32_t j = 0; j < vector.size (); j++)
+								{
+									osCrt << IOUtils::Format (vector.at (j).m_data.m_crt, 10, 12) << " ";
+								}
+							osCrt << "\n";
+						}
 				}
 			fileV << osV.str ();
 			fileQg << osQg.str ();
+			fileVL << osVL.str ();
+			fileCrt << osCrt.str ();
 			fileV.close ();
 			fileQg.close ();
+			fileVL.close ();
+			fileCrt.close ();
 		}
 	/******************************************************/
 	std::ofstream fileState;
@@ -150,15 +173,15 @@ Report::Save(void)
 			for(uint32_t i = 1; i <= m_states.size (); i++)
 				{
 					std::vector<TBus_t> vector = m_states[i];
-					osS << i << "=>\t";
 					for(uint32_t j = 0; j < vector.size (); j++)
 						{
-							osS << IOUtils::Format(vector.at (j).m_data.m_v) << " "
-									<< IOUtils::Format(vector.at (j).m_data.m_ang) << " "
+							osS << i << "=>\t"
+									<< "[ " << IOUtils::Format (vector.at (j).m_data.m_v, 8, 10) << " "
+									//<< IOUtils::Format (vector.at (j).m_data.m_ang) << " "
 									<< IOUtils::Format(vector.at (j).m_data.m_pc) << " "
 									<< IOUtils::Format(vector.at (j).m_data.m_qc) << " "
 									<< IOUtils::Format(vector.at (j).m_data.m_pg) << " "
-									<< IOUtils::Format(vector.at (j).m_data.m_qg)
+									<< IOUtils::Format(vector.at (j).m_data.m_qg) << " ]\n"
 						 ;
 						}
 					osS << "\n";
@@ -189,6 +212,8 @@ void
 Report::SetFileV (std::string fileV)
 {
 	m_fileV = fileV;
+	m_fileVL = fileV;
+	m_fileVL.append("l");
 }
 
 void
